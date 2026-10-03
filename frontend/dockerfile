@@ -10,4 +10,3 @@ RUN npm run build -- --configuration production
 # When container runs, it copies the generated static files (index.html, JS, CSS)
 # to the mounted volume at /export and exits cleanly.
 CMD ["sh", "-c", "cp -rf /app/dist/frontend/browser/* /export/ && echo 'Frontend build output copied to /export'"]
-.
