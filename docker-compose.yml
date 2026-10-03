@@ -5,7 +5,7 @@ services:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "YourStrong@Passw0rd"
     ports:
-      - "1433:1433"
+      - "14333:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
     healthcheck:
@@ -20,7 +20,7 @@ services:
       context: ./backend
       dockerfile: dockerfile
     environment:
-      #ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=ProductDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;MultipleActiveResultSets=True;"
       Cors__AllowedOrigins__0: http://localhost
@@ -39,7 +39,6 @@ services:
     volumes:
       - ./dist:/export
     restart: "no"
-
 
 volumes:
   sqlserver-data:

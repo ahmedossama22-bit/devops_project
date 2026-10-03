@@ -96,3 +96,12 @@ In Docker Compose setups, SQL Server often takes 10–20 seconds to become healt
 - **Web Server & Reverse Proxy**: Host Nginx (serving `/dist/frontend/browser` static files and proxying `/api` requests to backend on port 5000)
 - **Database**: `mcr.microsoft.com/mssql/server:2022-latest`
 
+### 4. Export the Frontend with Docker Compose
+
+Build the Angular app, export its static files to `./dist`, and remove the temporary container when it finishes:
+```bash
+docker compose -f docker-compose.frontend.yml run --build --rm frontend
+```
+
+The exported `index.html` is at `./dist/index.html`. Serve the exported files with the host Nginx configuration and keep the backend available on `localhost:5000`; requests to `/api` are proxied to it.
+
