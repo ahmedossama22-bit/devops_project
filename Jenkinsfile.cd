@@ -47,4 +47,4 @@ pipeline {
             echo "CD pipeline finished: ${currentBuild.currentResult}"
         }
     }
-}
+}.
