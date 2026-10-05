@@ -1,4 +1,4 @@
-pipeline {
+pipeline {
     agent any
 
     options {
@@ -23,10 +23,7 @@ pipeline {
             steps {
                 sh '''
                     set -eu
-                    dockerfiles=$(find . -type f \
-                        \( -iname 'Dockerfile' -o -iname 'Dockerfile.*' \) \
-                        -not -path './.git/*' \
-                        -not -path './frontend/node_modules/*' | sort)
+                    dockerfiles=$(find . -type f -iname 'dockerfile*' -not -path './.git/*' -not -path './frontend/node_modules/*' | sort)
 
                     if [ -z "$dockerfiles" ]; then
                         echo 'No Dockerfile found; skipping Dockerfile lint.'
