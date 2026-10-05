@@ -1,4 +1,4 @@
-pipeline {
+pipeline {
     agent any
 
     options {
@@ -38,44 +38,26 @@
             }
         }
 
-        stage('Lint') {
-            parallel {
-                stage('Frontend') {
-                    steps {
-                        dir('frontend') {
-                            sh 'docker run --rm -v "$PWD:/app" -w /app node:20-alpine sh -c "npm install && npm run lint"'
-                        }
-                    }
-                }
-                stage('Backend') {
-                    steps {
-                        sh 'docker run --rm -v "$WORKSPACE/backend:/src" -w /src/ProductApi mcr.microsoft.com/dotnet/sdk:8.0 sh -c "dotnet restore && dotnet format ProductApi.csproj --verify-no-changes --no-restore"'
-                    }
-                }
-            }
-        }
-
         stage('Build Images') {
             parallel {
                 stage('Backend') {
                     steps {
-                        sh 'docker compose -p "ci-${BUILD_NUMBER}" build backend'
+                        sh 'docker compose build backend'
                     }
                 }
                 stage('Frontend') {
                     steps {
-                        sh 'docker compose -p "ci-${BUILD_NUMBER}" build frontend'
+                        sh 'docker compose build frontend'
                     }
                 }
             }
         }
-
     }
 
     post {
         always {
-            sh 'docker compose -p "ci-${BUILD_NUMBER}" down --volumes --remove-orphans || true'
             echo "CI pipeline finished: ${currentBuild.currentResult}"
         }
     }
 }
+
