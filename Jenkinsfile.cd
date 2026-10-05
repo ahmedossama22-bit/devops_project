@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(
+            name: 'DEPLOY_DIR',
+            defaultValue: '/var/www/frontend',
+            description: 'Directory served by the host Nginx'
+        )
+    }
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Validate Compose') {
+            steps {
+                sh 'docker compose config --quiet'
+            }
+        }
+
+        stage('Deploy Backend') {
+            steps {
+                sh 'docker compose up -d --build sqlserver backend'
+            }
+        }
+
+        stage('Deploy Frontend') {
+            steps {
+                sh 'docker compose run --build --rm --no-deps frontend'
+                sh 'mkdir -p "$DEPLOY_DIR" && cp -R dist/. "$DEPLOY_DIR/"'
+                archiveArtifacts artifacts: 'dist/**', fingerprint: true
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "CD pipeline finished: ${currentBuild.currentResult}"
+        }
+    }
+}
