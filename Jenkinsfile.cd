@@ -36,7 +36,12 @@ pipeline {
         stage('Deploy Frontend') {
             steps {
                 sh 'docker compose run --build --rm --no-deps frontend'
-                sh 'mkdir -p "$DEPLOY_DIR" && cp -R dist/. "$DEPLOY_DIR/"'
+                sh '''
+                    set -eu
+                    deploy_dir="${DEPLOY_DIR:-/var/www/frontend}"
+                    mkdir -p "$deploy_dir"
+                    cp -R dist/. "$deploy_dir/"
+                '''
                 archiveArtifacts artifacts: 'dist/**', fingerprint: true
             }
         }
