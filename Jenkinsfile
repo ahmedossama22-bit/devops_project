@@ -5,8 +5,7 @@ pipeline {
         timestamps()
         disableConcurrentBuilds()
     }
-
-//    stages {
+    stages {
  //       stage('Checkout') {
   //          steps {
    //             checkout scm
