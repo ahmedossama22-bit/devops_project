@@ -6,11 +6,11 @@ pipeline {
         disableConcurrentBuilds()
     }
     stages {
- //       stage('Checkout') {
-  //          steps {
-   //             checkout scm
-      //      }
-    //    }
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
 
         stage('Validate Compose') {
             steps {
