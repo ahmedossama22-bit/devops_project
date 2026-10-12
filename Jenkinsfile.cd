@@ -1,3 +1,4 @@
+```groovy
 pipeline {
     agent any
 
@@ -5,7 +6,7 @@ pipeline {
         string(
             name: 'DEPLOY_DIR',
             defaultValue: '/var/www/frontend',
-            description: 'Directory served by the host Nginx'
+            description: 'Frontend deployment directory'
         )
     }
 
@@ -21,28 +22,56 @@ pipeline {
             }
         }
 
-        stage('Validate Compose') {
+        stage('Pull Images') {
             steps {
-                sh 'docker compose config --quiet'
+                sh '''
+                    docker pull ahmedmohmed/frontend_devops:latest
+                    docker pull ahmedmohmed/backend_devops:latest
+                '''
+            }
+        }
+
+        stage('Start SQL Server') {
+            steps {
+                sh '''
+                    docker compose -p devops-project up -d sqlserver
+                '''
             }
         }
 
         stage('Deploy Backend') {
             steps {
-                sh 'docker compose up -d --build sqlserver backend'
+                sh '''
+                    docker compose -p devops-project up -d --no-build backend
+                '''
             }
         }
 
         stage('Deploy Frontend') {
             steps {
-                sh 'docker compose run --build --rm --no-deps frontend'
                 sh '''
                     set -eu
+
                     deploy_dir="${DEPLOY_DIR:-/var/www/frontend}"
-                    mkdir -p "$deploy_dir"
-                    cp -R dist/. "$deploy_dir/"
+                    container_id=$(docker create \
+                        ahmedmohmed/frontend_devops:latest)
+
+                    trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
+
+                    sudo mkdir -p "$deploy_dir"
+                    sudo docker cp \
+                        "$container_id":/usr/share/nginx/html/. \
+                        "$deploy_dir"/
                 '''
-                archiveArtifacts artifacts: 'dist/**', fingerprint: true
+            }
+        }
+
+        stage('Verify') {
+            steps {
+                sh '''
+                    docker compose -p devops-project ps
+                    sudo test -f "${DEPLOY_DIR:-/var/www/frontend}/index.html"
+                '''
             }
         }
     }
@@ -53,3 +82,4 @@ pipeline {
         }
     }
 }
+```
