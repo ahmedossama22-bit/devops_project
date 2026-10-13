@@ -1,4 +1,3 @@
-```groovy
 pipeline {
     agent any
 
@@ -6,7 +5,7 @@ pipeline {
         string(
             name: 'DEPLOY_DIR',
             defaultValue: '/var/www/frontend',
-            description: 'Frontend deployment directory'
+            description: 'Directory served by the host Nginx'
         )
     }
 
@@ -24,54 +23,39 @@ pipeline {
 
         stage('Pull Images') {
             steps {
-                sh '''
-                    docker pull ahmedmohmed/frontend_devops:latest
-                    docker pull ahmedmohmed/backend_devops:latest
-                '''
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKERHUB_USERNAME',
+                    passwordVariable: 'DOCKERHUB_PASSWORD'
+                )]) {
+                    sh '''
+                        set -eu
+                        export DOCKER_CONFIG="$(mktemp -d)"
+                        trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+
+                        printf '%s' "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+                        docker pull ahmedmohmed/backend_devops:latest
+                        docker pull ahmedmohmed/frontend_devops:latest
+                        docker tag ahmedmohmed/backend_devops:latest devops-ci-backend:latest
+                        docker tag ahmedmohmed/frontend_devops:latest devops-ci-frontend:latest
+                    '''
+                }
             }
         }
 
-        stage('Start SQL Server') {
-            steps {
-                sh '''
-                    docker compose -p devops-project up -d sqlserver
-                '''
-            }
-        }
-
-        stage('Deploy Backend') {
-            steps {
-                sh '''
-                    docker compose -p devops-project up -d --no-build backend
-                '''
-            }
-        }
-
-        stage('Deploy Frontend') {
+        stage('Deploy Application') {
             steps {
                 sh '''
                     set -eu
+                    docker compose -p devops-project up -d --no-build sqlserver backend
+                    mkdir -p dist
+                    docker compose -p devops-project run --rm --no-deps --no-build frontend
 
                     deploy_dir="${DEPLOY_DIR:-/var/www/frontend}"
-                    container_id=$(docker create \
-                        ahmedmohmed/frontend_devops:latest)
-
-                    trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
-
-                    sudo mkdir -p "$deploy_dir"
-                    sudo docker cp \
-                        "$container_id":/usr/share/nginx/html/. \
-                        "$deploy_dir"/
+                    mkdir -p "$deploy_dir"
+                    cp -R dist/. "$deploy_dir/"
                 '''
-            }
-        }
-
-        stage('Verify') {
-            steps {
-                sh '''
-                    docker compose -p devops-project ps
-                    sudo test -f "${DEPLOY_DIR:-/var/www/frontend}/index.html"
-                '''
+                archiveArtifacts artifacts: 'dist/**', fingerprint: true
             }
         }
     }
@@ -82,4 +66,3 @@ pipeline {
         }
     }
 }
-```
