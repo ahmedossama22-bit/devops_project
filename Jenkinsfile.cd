@@ -52,8 +52,11 @@ pipeline {
                     docker compose -p devops-project run --rm --no-deps frontend
 
                     deploy_dir="${DEPLOY_DIR:-/var/www/frontend}"
-                    mkdir -p "$deploy_dir"
-                    cp -R dist/. "$deploy_dir/"
+                    docker run --rm --entrypoint /bin/sh \
+                        -v "$WORKSPACE/dist:/src:ro" \
+                        -v "$deploy_dir:/dest" \
+                        devops-ci-frontend:latest \
+                        -c 'cp -R /src/. /dest/'
                 '''
                 archiveArtifacts artifacts: 'dist/**', fingerprint: true
             }
