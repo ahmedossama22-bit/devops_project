@@ -49,7 +49,7 @@ pipeline {
                     set -eu
                     docker compose -p devops-project up -d --no-build sqlserver backend
                     mkdir -p dist
-                    docker compose -p devops-project run --rm --no-deps --no-build frontend
+                    docker compose -p devops-project run --rm --no-deps frontend
 
                     deploy_dir="${DEPLOY_DIR:-/var/www/frontend}"
                     mkdir -p "$deploy_dir"
